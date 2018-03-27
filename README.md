@@ -12,6 +12,7 @@ For example:
 - `!roll 3d10 + 2` (roll three 10 sided dice and add 2 to each roll)
 - `!roll 5d20 + 1 > 10` (roll five 20 sided dice and add 1 to each roll and separate the rolls greater or equal to 10 from those below)
 
+
 Supports a basic inventory system.
 
 In format:
@@ -20,7 +21,7 @@ In format:
 Which will add the item to the players inventory.
 
 The player can see their own inventory by using:
- -!myitems
+ - !myitems
 
 Which will print to the channel.
 
@@ -30,6 +31,7 @@ The GM/DM can use the command:
 To print a list of all player items to their private channel.
 
 Editing and deleting items without directly modifying the database currently is not working.
+
 
 There is also support for compendium lookup:
 - !lookup item_name
