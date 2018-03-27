@@ -8,9 +8,9 @@ Supports dice rolling in the format:
 - !roll <#d#> <+#> ( ># )
 
 For example: 
-`!roll 1d10` (roll one 10 sided dice)
-`!roll 3d10 + 2` (roll three 10 sided dice and add 2 to each roll)
-`!roll 5d20 + 1 > 10` (roll five 20 sided dice and add 1 to each roll and separate the rolls greater or equal to 10 from those below)
+- `!roll 1d10` (roll one 10 sided dice)
+- `!roll 3d10 + 2` (roll three 10 sided dice and add 2 to each roll)
+- `!roll 5d20 + 1 > 10` (roll five 20 sided dice and add 1 to each roll and separate the rolls greater or equal to 10 from those below)
 
 Supports a basic inventory system.
 
