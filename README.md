@@ -42,7 +42,7 @@ There is also support for a custom compendium in comma separated values:
 For example:
 `!addlookup [Khopesh],,Damage: 1d8+4,Damage Type: Slashing,Saving Throw: STR vs DC STR,Weight: 3`
 
-which will print:
+Using `!lookup khopesh` will print:
 ```
 [Khopesh]
 
