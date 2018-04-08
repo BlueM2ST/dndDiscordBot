@@ -3,6 +3,8 @@ A basic Discord DnD Bot
 
 Some basic functions to use when playing DnD or similar games through Discord.
 
+Most config is done through a json file for easy modification (this config.json file will need to be filled in for the bot to work)
+
 # Features
 Supports dice rolling in the format:
 - !roll <#d#> <+#> ( ># )
@@ -90,5 +92,4 @@ Some features that I plan on adding:
 - Editing and deleting of inventory items
 - I might eventually hook it up to interact with roll20 (API or web, unsure)
 - Have the `!lookup` command work better with the web compendium
-- Add a login file
 - More roles, set it up to work better if there is a Discord server hosting more than one game.

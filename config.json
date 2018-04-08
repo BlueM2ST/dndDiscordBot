@@ -1,0 +1,23 @@
+{
+  "login": {
+    "token": ""
+  },
+
+  "channels": {
+    "general_name": "",
+    "general_ID": "",
+    "output_name": "",
+    "output_ID": "",
+    "gmdm_name": "",
+    "gmdm_ID": ""
+  },
+
+  "database": {
+    "lookup": "lookup_db.txt",
+    "inventory": "inventory_db.txt"
+  },
+
+  "invite": "",
+  "version": "v0.3"
+
+}

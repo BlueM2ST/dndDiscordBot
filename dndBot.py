@@ -9,6 +9,8 @@ import random
 import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
+from json import load
+from os import path
 
 description = 'Basic DnD bot'
 bot = commands.Bot(command_prefix='!', description=description)
@@ -16,12 +18,45 @@ bot = commands.Bot(command_prefix='!', description=description)
 bot.remove_command("help")
 bot.server = bot.servers
 
+config = load(open('config.json'))
 
-# =for the dnd server=
-BOTTOKEN = 'TOKEN'
-GENERAL_CHANNEL = 'HERE'
-BOT_OUTPUT_CHANNEL = 'HERE'
-GM_LAYER_CHANNEL = 'HERE'
+# token
+BOTTOKEN = config['login']['token']
+
+# channels
+GENERAL_CHANNEL_ID_NAME = config['channels']['general_name']
+GENERAL_CHANNEL_ID = config['channels']['general_ID']
+
+BOT_OUTPUT_CHANNEL_ID_NAME = config['channels']['output_name']
+BOT_OUTPUT_CHANNEL_ID = config['channels']['output_ID']
+
+GM_LAYER_CHANNEL_NAME = config['channels']['gmdm_name']
+GM_LAYER_CHANNEL_ID = config['channels']['gmdm_ID']
+
+#database
+LOOKUP_DATABASE = config['database']['lookup']
+INVENTORY_DATABASE = config['database']['inventory']
+
+# other
+INVITE = config['invite']
+VERSION = config['version']
+
+# if the database files don't exist, attempt to create them
+if not path.exists(LOOKUP_DATABASE):
+    print('Lookup database was not found, attempting to create.')
+    try:
+        open(LOOKUP_DATABASE, 'w+').close()
+        print('Successfully created lookup database.')
+    except:
+        print('Could not create lookup database.')
+
+if not path.exists(INVENTORY_DATABASE):
+    print('Inventory database was not found, attempting to create.')
+    try:
+        open(INVENTORY_DATABASE, 'w+').close()
+        print('Successfully created inventory database.')
+    except:
+        print('Could not create inventory database.')
 
 # ================================================= When joining ==================================================
 # will post a welcome message in the general channel when someone joins
@@ -29,7 +64,7 @@ GM_LAYER_CHANNEL = 'HERE'
 async def on_member_join(member):
     welcomeMessage = '{0.mention} just joined {1.name}! Welcome!'.format(member, bot.server)
     # will send it to the general channel
-    await bot.send_message(discord.Object(id=GENERAL_CHANNEL), welcomeMessage)
+    await bot.send_message(discord.Object(id=GENERAL_CHANNEL_ID), welcomeMessage)
 
 
 # ======================================= based on specific chat sequences ==========================================
@@ -89,7 +124,7 @@ async def help(ctx):
            '!choose <choice1> <choice2>\n'\
            '!invite'\
            '```'
-    await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), say)
+    await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), say)
 
 
 # ===================================================================================================================
@@ -124,7 +159,7 @@ async def roll(dice : str, *, add=''):
                     pass
 
             except IndexError:
-                await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL),
+                await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID),
                                        'Format must be: ```!roll <#d#> <+#> ( ># )```')
                 return
 
@@ -151,15 +186,15 @@ async def roll(dice : str, *, add=''):
                     continue
             list.append(str(value))
         if greaterSet == True:
-            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Greater({}): {} | Lower({}): {}'
+            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Greater({}): {} | Lower({}): {}'
                                    .format(str(greaterCount), greaterList, str(rejectedCount), lowerList))
         else:
             result = ', '.join(list)
-            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), result)
+            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), result)
         return
 
     except Exception:
-        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Format must be: ```!roll <#d#> <+#> ( ># )```')
+        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Format must be: ```!roll <#d#> <+#> ( ># )```')
         return
 
 
@@ -188,7 +223,7 @@ async def additem(ctx, *, fullItem=''):
         # ==========if the list is empty, try to repopulate it============
         if not inventoryList:
             print('Inventory memory database is empty, attempting to repopulate.')
-            inventoryFile = open('dndPlayerInventory.txt', 'r', encoding='utf-8')
+            inventoryFile = open(INVENTORY_DATABASE, 'r', encoding='utf-8')
             read = inventoryFile.readlines()
             for thisline in read:
                 inventoryList.append(thisline)
@@ -205,7 +240,7 @@ async def additem(ctx, *, fullItem=''):
                 raise ValueError
 
         except ValueError:
-            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Value <quantity> must be:'
+            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Value <quantity> must be:'
                                                                             '```Greater than 0```')
             return
 
@@ -215,7 +250,7 @@ async def additem(ctx, *, fullItem=''):
                 raise ValueError
 
         except ValueError:
-            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Value <value> must be:'
+            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Value <value> must be:'
                                                                             '```0 or greater```')
             return
         # make sure that commas in the description are handled properly and don't act as new value in the list
@@ -230,21 +265,21 @@ async def additem(ctx, *, fullItem=''):
         for value in inventoryList:
             if member.name in value:
                 if str(fullItem[0]) in value:
-                    await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'This item is already in your '
+                    await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'This item is already in your '
                                                                                     'inventory.')
                     return
 
-        inventory = open('dndPlayerInventory.txt', 'a', encoding='utf-8')
+        inventory = open(INVENTORY_DATABASE, 'a', encoding='utf-8')
         data = member.name + '<|>' + fullItem[0] + '<|>' + fullItem[1] + '<|>' + fullItem[2] + '<|>' + fullItem[3] + '\n'
         inventory.write(data)
         inventory.close()
         inventoryList.append(data)
-        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL),
+        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID),
                                'Added item \"{}\" to {}\'s inventory'.format(fullItem[0], member.nick))
         return
 
     except Exception:
-        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Please add quotes around the item information '
+        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Please add quotes around the item information '
                                                                         'and separate values with commas in format:\n'
                       '```!additem \"<item name>, <quantity>, <value>, <desc>\"```')
         return
@@ -263,7 +298,7 @@ async def myitems(ctx):
     # ==========if the list is empty, try to repopulate it============
     if not inventoryList:
         print('Inventory memory database is empty, attempting to repopulate.')
-        inventoryFile = open('dndPlayerInventory.txt', 'r', encoding='utf-8')
+        inventoryFile = open(INVENTORY_DATABASE, 'r', encoding='utf-8')
         read = inventoryFile.readlines()
         for thisline in read:
             inventoryList.append(thisline)
@@ -277,9 +312,9 @@ async def myitems(ctx):
                 .format(value[1], value[2], value[3], value[4])
 
     if say == '':
-        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), '=Inventory Empty=')
+        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), '=Inventory Empty=')
     else:
-        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), '```{}```'.format(say))
+        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), '```{}```'.format(say))
     return
 
 
@@ -297,7 +332,7 @@ async def allitems(ctx):
     # ==========if the list is empty, try to repopulate it============
     if not inventoryList:
         print('Inventory memory database is empty, attempting to repopulate.')
-        inventoryFile = open('dndPlayerInventory.txt', 'r', encoding='utf-8')
+        inventoryFile = open(INVENTORY_DATABASE, 'r', encoding='utf-8')
         read = inventoryFile.readlines()
         for thisline in read:
             inventoryList.append(thisline)
@@ -310,9 +345,9 @@ async def allitems(ctx):
             .format(value[0], value[1], value[2], value[3], value[4])
 
     if say == '':
-        await bot.send_message(discord.Object(id=GM_LAYER_CHANNEL), '=Inventory Empty=')
+        await bot.send_message(discord.Object(id=GM_LAYER_CHANNEL_ID), '=Inventory Empty=')
     else:
-        await bot.send_message(discord.Object(id=GM_LAYER_CHANNEL), '```{}```'.format(say))
+        await bot.send_message(discord.Object(id=GM_LAYER_CHANNEL_ID), '```{}```'.format(say))
     return
 
 # ======================= editing items broken from previous version ===========================
@@ -355,7 +390,7 @@ async def allitems(ctx):
 #         else:
 #             quantity = int(quantity)
 #             if quantity <= 0:
-#                 await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Zero and negative numbers cannot be used.')
+#                 await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Zero and negative numbers cannot be used.')
 #                 return
 #         tempList = []
 #         for player in playerList:
@@ -371,7 +406,7 @@ async def allitems(ctx):
 #                         else:
 #                             newQuantity = origQuantity - quantity
 #                         if newQuantity < 0:
-#                             await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'You don\'t have this many of that item, you have {}'.format(str(origQuantity)))
+#                             await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'You don\'t have this many of that item, you have {}'.format(str(origQuantity)))
 #                             return
 #                         elif newQuantity == 0:
 #                             line = ''
@@ -383,22 +418,22 @@ async def allitems(ctx):
 #                         for value in tempList:
 #                             inventory.write(value)
 #                         inventory.close()
-#                         await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Removed {} {} from your inventory.'.format(quantity, item))
+#                         await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Removed {} {} from your inventory.'.format(quantity, item))
 #                         return
 #                     else:
 #                         pass
-#                 await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'This item is not in your inventory.')
+#                 await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'This item is not in your inventory.')
 #             else:
 #                 pass
 #     except Exception:
-#         await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Please add quotes around the item information in format:\n'
+#         await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Please add quotes around the item information in format:\n'
 #                       '!delitem \"<item name>, <quantity/all>\".')
 #
 #
 # @bot.command(pass_context=True, hidden=True)
 # async def listcommands(ctx):
 #     await bot.delete_message(ctx.message)
-#     await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), '```!choose <choice1> <choice2> | !membercount | '
+#     await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), '```!choose <choice1> <choice2> | !membercount | '
 #                                                                     '!roll <#d#> <+#>  | !invite | !joined <name> | '
 #                   '!additem \"<item> , <#> , <$> , <desc>\" | !myitems | !delitem arg1```')
 
@@ -431,7 +466,7 @@ async def lookup(ctx, *, name):
 
         if not customList:
             print('dndCustomLookup memory database is empty, attempting to repopulate.')
-            customFile = open('dndCustomLookup.txt', 'r', encoding='utf-8')
+            customFile = open(LOOKUP_DATABASE, 'r', encoding='utf-8')
             read = customFile.readlines()
             for thisline in read:
                 customList.append(thisline)
@@ -446,10 +481,10 @@ async def lookup(ctx, *, name):
                 break
 
         if say == '':
-            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Could not find: `{}`'.format(name))
+            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Could not find: `{}`'.format(name))
             return
 
-        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), '```asciidoc\n' + say + '```')
+        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), '```asciidoc\n' + say + '```')
         return
 
     title = title.string
@@ -473,7 +508,7 @@ async def lookup(ctx, *, name):
 
     # will only work with items and spells
     if valueList is None:
-        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Could not find: `{}`'.format(name))
+        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Could not find: `{}`'.format(name))
         return
 
     say = '[' + title+ ']' + '\n\n' + '\n'.join(valueList) + '\n\n' + desc
@@ -488,46 +523,44 @@ async def lookup(ctx, *, name):
         currentCount += len(line)
         localCount += len(line)
         if currentCount > charmax:
-            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), '```asciidoc\n' + say + '```')
+            await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), '```asciidoc\n' + say + '```')
             currentMessage = ''
             currentCount = localCount
             messageLast = False
         currentMessage += line + '\n'
         localCount = 0
     if messageLast == True:
-        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), '```asciidoc\n' + say + '```')
+        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), '```asciidoc\n' + say + '```')
 
     return
 
 
 @bot.command(pass_context=True, hidden=True)
 async def addlookup(ctx, *, fullItem=''):
-    member = ctx.message.author
     message = ctx.message
-    channel = message.channel
 
     # ==========if the list is empty, try to repopulate it============
     if not customList:
         print('dndCustomLookup memory database is empty, attempting to repopulate.')
-        inventoryFile = open('dndPlayerInventory.txt', 'r', encoding='utf-8')
+        inventoryFile = open(INVENTORY_DATABASE, 'r', encoding='utf-8')
         read = inventoryFile.readlines()
         for thisline in read:
             inventoryList.append(thisline)
         print('Repopulated dndCustomLookup memory database.\n')
 
     if fullItem == '':
-        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'You must enter at least one value.')
+        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'You must enter at least one value.')
         return
 
     fullItem = fullItem.split(',')
     newCustom = '<|>'.join(fullItem)
     newCustom = newCustom + '\n'
 
-    inventory = open('dndCustomLookup.txt', 'a', encoding='utf-8')
+    inventory = open(LOOKUP_DATABASE, 'a', encoding='utf-8')
     inventory.write(newCustom)
     inventory.close()
     customList.append(newCustom)
-    await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Custom item added to database.')
+    await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Custom item added to database.')
     return
 
 
@@ -541,13 +574,30 @@ async def addlookup(ctx, *, fullItem=''):
 @bot.command(description='For when you want to settle a debate')
 async def choose(*choices : str):
     """Chooses between multiple choices."""
-    await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'I declare it to be '+random.choice(choices))
+    await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'I declare it to be '+random.choice(choices))
+
+
+# ========================================== deletes channel messages ==========================================
+@commands.has_role('GM')
+@bot.command(pass_context=True)
+async def delchannelmessages(ctx, limit=1):
+    try:
+        message = ctx.message
+        channel = message.channel
+        limit = int(limit)
+        await bot.purge_from(channel=channel, limit=limit)
+    except Exception:
+        return
 
 
 # ================================================ Prints a static invite ========================================
 @bot.command()
 async def invite():
-    await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL), 'Here you go: SOME INVITE')
+    if INVITE == '':
+        return
+    else:
+        await bot.send_message(discord.Object(id=BOT_OUTPUT_CHANNEL_ID), 'Here you go: {}'.format(INVITE))
+
 
 # ================================================== disconnect =================================================
 @bot.command()
@@ -560,5 +610,5 @@ async def disconnectbot():
 #                                            =RUNNING THE BOT=
 #
 # ===================================================================================================================
-# runs the bot with its ticket
+# runs the bot with its token
 bot.run(BOTTOKEN)
